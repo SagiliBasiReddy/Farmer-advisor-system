@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🌾 Farmer Advisory System</title>
+</head>
+<body>
+    <h2>🌾 Farmer Advisory System</h2>
+
+    <form method="post" action="/ask">
+        <textarea name="query" rows="4" cols="60"
+            placeholder="Enter farmer query..."></textarea><br><br>
+        <button type="submit">Get Advice</button>
+    </form>
+
+    {% if response %}
+        <hr>
+        <p><b>Translated:</b> {{ translated }}</p>
+        <p><b>Canonical Question:</b> {{ canonical }}</p>
+        <p><b>Advice:</b> {{ response.answer }}</p>
+        <p><b>Confidence:</b> {{ response.confidence }}</p>
+    {% endif %}
+</body>
+</html>
