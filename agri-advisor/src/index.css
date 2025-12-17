@@ -1,0 +1,213 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+@layer base {
+  :root {
+    /* Earthy Agricultural Palette */
+    --background: 45 30% 97%;
+    --foreground: 150 25% 15%;
+
+    --card: 45 40% 99%;
+    --card-foreground: 150 25% 15%;
+
+    --popover: 45 40% 99%;
+    --popover-foreground: 150 25% 15%;
+
+    /* Deep Forest Green - Primary */
+    --primary: 145 45% 28%;
+    --primary-foreground: 45 30% 97%;
+
+    /* Warm Terracotta - Secondary */
+    --secondary: 25 55% 92%;
+    --secondary-foreground: 25 40% 25%;
+
+    /* Soft Sage - Muted */
+    --muted: 120 15% 92%;
+    --muted-foreground: 150 10% 45%;
+
+    /* Wheat Gold - Accent */
+    --accent: 42 85% 55%;
+    --accent-foreground: 42 70% 15%;
+
+    --destructive: 0 65% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 120 15% 88%;
+    --input: 120 15% 88%;
+    --ring: 145 45% 28%;
+
+    --radius: 0.75rem;
+
+    /* Confidence Colors */
+    --confidence-high: 145 60% 40%;
+    --confidence-medium: 45 85% 50%;
+    --confidence-low: 0 70% 55%;
+
+    /* Custom Shadows */
+    --shadow-soft: 0 4px 20px -4px hsl(150 25% 15% / 0.08);
+    --shadow-card: 0 8px 30px -8px hsl(150 25% 15% / 0.1);
+    --shadow-elevated: 0 20px 50px -15px hsl(150 25% 15% / 0.15);
+
+    /* Gradients */
+    --gradient-hero: linear-gradient(135deg, hsl(145 45% 28%) 0%, hsl(145 35% 22%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(45 40% 99%) 0%, hsl(45 30% 96%) 100%);
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 150 20% 8%;
+    --foreground: 45 30% 95%;
+
+    --card: 150 15% 12%;
+    --card-foreground: 45 30% 95%;
+
+    --popover: 150 15% 12%;
+    --popover-foreground: 45 30% 95%;
+
+    --primary: 145 50% 45%;
+    --primary-foreground: 150 20% 8%;
+
+    --secondary: 25 30% 18%;
+    --secondary-foreground: 25 50% 85%;
+
+    --muted: 150 15% 18%;
+    --muted-foreground: 120 10% 60%;
+
+    --accent: 42 75% 50%;
+    --accent-foreground: 42 70% 10%;
+
+    --destructive: 0 60% 45%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 150 15% 20%;
+    --input: 150 15% 20%;
+    --ring: 145 50% 45%;
+
+    --confidence-high: 145 55% 45%;
+    --confidence-medium: 45 80% 55%;
+    --confidence-low: 0 65% 50%;
+
+    --shadow-soft: 0 4px 20px -4px hsl(0 0% 0% / 0.3);
+    --shadow-card: 0 8px 30px -8px hsl(0 0% 0% / 0.4);
+    --shadow-elevated: 0 20px 50px -15px hsl(0 0% 0% / 0.5);
+
+    --gradient-hero: linear-gradient(135deg, hsl(145 50% 35%) 0%, hsl(145 40% 25%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(150 15% 12%) 0%, hsl(150 15% 10%) 100%);
+
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  }
+}
+
+@layer components {
+  .card-agricultural {
+    @apply bg-card rounded-2xl border border-border;
+    box-shadow: var(--shadow-card);
+    background: var(--gradient-card);
+  }
+
+  .btn-primary-farm {
+    @apply bg-primary text-primary-foreground font-semibold px-6 py-3 rounded-xl;
+    @apply hover:opacity-90 transition-all duration-200;
+    @apply active:scale-[0.98];
+  }
+
+  .input-farm {
+    @apply bg-card border-2 border-border rounded-xl px-4 py-3;
+    @apply focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200;
+    @apply placeholder:text-muted-foreground;
+  }
+
+  .confidence-bar {
+    @apply h-3 rounded-full transition-all duration-500 ease-out;
+  }
+
+  .confidence-high {
+    background: hsl(var(--confidence-high));
+  }
+
+  .confidence-medium {
+    background: hsl(var(--confidence-medium));
+  }
+
+  .confidence-low {
+    background: hsl(var(--confidence-low));
+  }
+}
+
+@layer utilities {
+  .animate-fade-up {
+    animation: fadeUp 0.5s ease-out forwards;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out forwards;
+  }
+
+  .animate-pulse-soft {
+    animation: pulseSoft 2s ease-in-out infinite;
+  }
+
+  @keyframes fadeUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes pulseSoft {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.6;
+    }
+  }
+
+  .stagger-1 { animation-delay: 0.1s; }
+  .stagger-2 { animation-delay: 0.2s; }
+  .stagger-3 { animation-delay: 0.3s; }
+  .stagger-4 { animation-delay: 0.4s; }
+  .stagger-5 { animation-delay: 0.5s; }
+}
