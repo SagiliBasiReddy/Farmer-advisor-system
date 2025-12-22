@@ -1,6 +1,6 @@
-# Agricultural Advisory System - Farmers Call Center
+# SRM Agro Advisor
 
-A full-stack web application providing AI-powered agricultural guidance in multiple Indian languages (Hindi, Bengali, Marathi, etc.). Built with Python Flask backend and React TypeScript frontend.
+An AI-powered agricultural advisory system providing intelligent farming guidance in multiple Indian languages. Built with Python Flask backend and React TypeScript frontend for farmers across India.
 
 ## 🌾 Features
 
@@ -20,11 +20,14 @@ A full-stack web application providing AI-powered agricultural guidance in multi
 - **Framework**: Flask
 - **Python Libraries**:
   - `pandas` - Data processing
+  - `numpy` - Numerical computations
   - `scikit-learn` - TF-IDF vectorization
-  - `rank-bm25` - BM25 ranking
+  - `rank-bm25` - BM25 ranking algorithm
   - `sentence-transformers` - Semantic embeddings
+  - `deep-translator` - Multi-language translation
   - `requests` - HTTP client
   - `flask-cors` - Cross-origin support
+  - `python-dotenv` - Environment variable management
 
 ### Frontend
 - **Framework**: React 18 with TypeScript
@@ -41,8 +44,8 @@ A full-stack web application providing AI-powered agricultural guidance in multi
 
 ### 1. Clone Repository
 ```bash
-git clone https://github.com/yourusername/agricultural-advisory.git
-cd agricultural-advisory
+git clone https://github.com/SagiliBasiReddy/Agro-Advisor.git
+cd Agro-Advisor
 ```
 
 ### 2. Setup Backend
@@ -84,28 +87,33 @@ Visit `http://localhost:8080` in your browser
 
 ```
 .
-├── app.py                          # Flask main application
-├── requirements.txt                # Python dependencies
-├── farmers_call_query_data.csv     # Agricultural database (65k+ records)
-├── test_multilingual_queries.csv   # Test queries in multiple languages
+├── app.py                                  # Flask main application
+├── requirements.txt                        # Python dependencies
+├── farmers_call_query_data_cleaned.csv    # Agricultural database (cleaned & deduplicated)
 │
 ├── Backend Modules:
-├── translator_fixed.py             # Multi-language translator
-├── summarizer.py                   # Query summarizer (extracts crop)
-├── canonicalizer.py                # Query canonicalization
-├── retriever.py                    # Semantic search & ranking
-├── crop_preference.py              # Crop-specific filtering
+├── translator_fixed.py                    # Multi-language translator
+├── soltrans.py                            # Solution translator (local language conversion)
+├── canonicalizer.py                       # Query canonicalization
+├── retriever.py                           # Semantic search & ranking (TF-IDF + BM25)
+├── crop_preference.py                     # Crop-specific filtering
+├── llm_validator.py                       # Answer validation
 │
-├── agri-advisor/                   # React Frontend
+├── agri-advisor/                          # React Frontend
 │   ├── src/
-│   │   ├── components/             # React components
-│   │   ├── pages/                  # Page components
-│   │   └── main.tsx                # Entry point
+│   │   ├── components/                    # React components
+│   │   │   ├── Header.tsx                 # SRM Agro Advisor branding
+│   │   │   ├── QueryInput.tsx             # Multilingual voice/text input
+│   │   │   ├── ResultsCard.tsx            # Results display
+│   │   │   └── ...
+│   │   ├── pages/                         # Page components
+│   │   ├── types/                         # TypeScript types
+│   │   └── main.tsx                       # Entry point
 │   ├── package.json
 │   ├── vite.config.ts
 │   └── tailwind.config.ts
 │
-├── .env                            # Environment variables
+├── .env                                   # Environment variables
 ├── .gitignore
 └── README.md
 ```
@@ -135,13 +143,14 @@ Submit a farmer query and receive agricultural advisory
 
 ## 📊 How It Works
 
-1. **User Query** → Farmer enters question in any Indian language
-2. **Translation** → LLM translates to English
-3. **Summarization** → Extracts crop name (if mentioned)
+1. **User Query** → Farmer enters question via voice or text in any language
+2. **Language Detection** → Detects Telugu, Tamil, Hindi, English, or mixed Romanized formats
+3. **Translation** → Translates non-English queries to English
 4. **Canonicalization** → Converts to standard query format
-5. **Retrieval** → Semantic search in 65k+ agricultural records
+5. **Retrieval** → Hybrid semantic search (TF-IDF + BM25) in 65k+ agricultural records
 6. **Filtering** → Crop-specific preference matching
-7. **Response** → Returns best matching advisory with confidence score
+7. **Solution Translation** → Translates response back to user's language
+8. **Response** → Returns best matching advisory with confidence score
 
 ## 🔑 Environment Variables
 
@@ -157,11 +166,12 @@ VITE_API_URL=http://localhost:5000
 
 ## 📝 Database
 
-**farmers_call_query_data.csv** contains:
-- 65,000+ agricultural Q&A pairs
+**farmers_call_query_data_cleaned.csv** contains:
+- 65,000+ agricultural Q&A pairs (deduplicated & cleaned)
+- Multiple standardized question formats for each crop issue
 - Topics: Cultivation, pest management, disease control, fertilizers, irrigation
 - Crops: Vegetables, cereals, pulses, spices, fruits, etc.
-- Languages: Primarily in English with regional language references
+- Quality: Cleaned dataset with standardized questions and comprehensive answers
 
 ## 🧪 Testing
 
@@ -247,26 +257,13 @@ This project is licensed under the MIT License - see [LICENSE](LICENSE) file for
 
 ## 👥 Authors
 
-- **Sagil** - Initial development
-
-## 🙏 Acknowledgments
-
-- Krishi Vigyan Kendra (KVK), Darrang for agricultural data
-- Farmers' call center data from Indian agricultural extension services
-- Open source community for excellent libraries
+- **SagiliBasiReddy** - Initial development
 
 ## 📞 Contact & Support
 
 For issues, questions, or suggestions:
-- GitHub Issues: [Create an issue](https://github.com/yourusername/agricultural-advisory/issues)
-- Email: your.email@example.com
+- GitHub Issues: [Create an issue](https://github.com/SagiliBasiReddy/Agro-Advisor/issues)
 
 ## 🔗 Links
 
-- [Live Demo](https://agricultural-advisory.example.com)
-- [Documentation](https://docs.example.com)
-- [API Docs](https://api.example.com/docs)
-
----
-
-Made with ❤️ for Indian Farmers
+- GitHub Repository: [SagiliBasiReddy/Agro-Advisor](https://github.com/SagiliBasiReddy/Agro-Advisor)
