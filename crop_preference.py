@@ -11,9 +11,10 @@ def prefer_crop_specific(candidates, crop):
 
     for c in candidates:
         q = c["question"].lower()
-        a = c["answers"].lower()
+        # Join all answer texts since answers is now a list of dicts
+        answers_text = " ".join([ans["text"] for ans in c["answers"]]).lower()
 
-        if crop in q or crop in a:
+        if crop in q or crop in answers_text:
             crop_specific.append(c)
         else:
             generic.append(c)

@@ -30,6 +30,7 @@ EXAMPLES = [
     ("leaf turning yellow in spine gourd what to do", "asking about control of yellowing of leaf in spine gourd"),
     ("bitter gourd fertilizer per bigha", "asking about the fertilizer dose of bitter gourd"),
     ("marigold diseases", "asking about disease in marigold"),
+    ("my cow is not eating grass", "asking about cow not eating grass"),
 ]
 
 

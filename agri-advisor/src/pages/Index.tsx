@@ -6,12 +6,24 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import ErrorMessage from "@/components/ErrorMessage";
 
 // Type definition for API response
+interface Answer {
+  text: string;
+  confidence: number;
+  rank: number;
+}
+
 interface AdvisoryResponse {
   translated: string;
+  original_language?: string;
+  original_language_advice?: string;
   canonical: string;
   advice: string;
   confidence: number;
   disclaimer: string;
+  all_answers?: Answer[];
+  answer_count?: number;
+  is_validated?: boolean;
+  validation_reason?: string;
 }
 
 const Index = () => {
@@ -19,6 +31,7 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<AdvisoryResponse | null>(null);
   const [error, setError] = useState(false);
+  const [detectedLanguage, setDetectedLanguage] = useState<string>("");
 
   // Handle form submission
   const handleSubmit = async () => {
@@ -36,7 +49,10 @@ const Index = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ query: query.trim() }),
+        body: JSON.stringify({ 
+          query: query.trim(),
+          language: detectedLanguage // Pass detected language from transcription
+        }),
       });
 
       if (!response.ok) {
@@ -66,51 +82,62 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Decorative background pattern */}
-      <div 
-        className="fixed inset-0 pointer-events-none opacity-30"
-        style={{
-          backgroundImage: `radial-gradient(circle at 20% 80%, hsl(var(--primary) / 0.08) 0%, transparent 50%),
-                           radial-gradient(circle at 80% 20%, hsl(var(--accent) / 0.08) 0%, transparent 50%)`,
-        }}
-      />
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+      {/* Decorative animated background elements */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-20 right-0 w-96 h-96 bg-emerald-500/20 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-teal-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: "1s" }} />
+        <div className="absolute top-1/2 right-1/4 w-64 h-64 bg-green-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: "0.5s" }} />
+      </div>
 
       {/* Main content */}
-      <div className="relative z-10 pb-16">
+      <div className="relative z-10">
         {/* Header */}
         <Header />
 
         {/* Main Content Area */}
-        <main className="mt-8 space-y-8">
-          {/* Query Input - Always visible unless showing results */}
+        <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+          {/* Query Input Section */}
           {!result && !error && (
-            <QueryInput
-              query={query}
-              setQuery={setQuery}
-              onSubmit={handleSubmit}
-              isLoading={isLoading}
-            />
+            <div className="space-y-8">
+              <QueryInput
+                query={query}
+                setQuery={setQuery}
+                onSubmit={handleSubmit}
+                isLoading={isLoading}
+                setDetectedLanguage={setDetectedLanguage}
+              />
+            </div>
           )}
 
           {/* Loading State */}
-          {isLoading && <LoadingSpinner />}
+          {isLoading && (
+            <div className="flex justify-center items-center min-h-[400px]">
+              <LoadingSpinner />
+            </div>
+          )}
 
           {/* Results */}
           {result && !isLoading && (
             <>
-              <ResultsCard data={result} />
+              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <ResultsCard data={result} />
+              </div>
               
               {/* Ask Another Question Button */}
-              <div className="text-center mt-8">
+              <div className="mt-12 text-center">
                 <button
                   onClick={() => {
                     setResult(null);
                     setQuery("");
+                    setDetectedLanguage("");
                   }}
-                  className="text-primary hover:text-primary/80 font-medium underline underline-offset-4 transition-colors"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold rounded-lg hover:shadow-lg hover:shadow-green-500/30 transition-all duration-200 hover:scale-105 active:scale-95"
                 >
-                  Ask another question
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Ask Another Question
                 </button>
               </div>
             </>
@@ -119,14 +146,16 @@ const Index = () => {
           {/* Error State */}
           {error && !isLoading && <ErrorMessage onRetry={handleRetry} />}
         </main>
-      </div>
 
-      {/* Footer */}
-      <footer className="fixed bottom-0 left-0 right-0 py-4 bg-background/80 backdrop-blur-sm border-t border-border">
-        <p className="text-center text-sm text-muted-foreground">
-          Farmer Advisory System • Academic Demo
-        </p>
-      </footer>
+        {/* Footer */}
+        <footer className="mt-16 border-t border-gray-200/50 bg-white/50 backdrop-blur-sm">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <p className="text-center text-sm text-gray-600">
+              🌾 AgroAdvisor • AI-Powered Agricultural Guidance for Modern Farmers
+            </p>
+          </div>
+        </footer>
+      </div>
     </div>
   );
 };
