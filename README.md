@@ -1,4 +1,4 @@
-# SRM Agro Advisor
+#  Agro Advisor
 
 An AI-powered agricultural advisory system providing intelligent farming guidance in multiple Indian languages. Built with Python Flask backend and React TypeScript frontend for farmers across India.
 
