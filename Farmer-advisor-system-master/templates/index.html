@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🌾 Farmer Advisory System</title>
+</head>
+<body>
+    <h2>🌾 Farmer Advisory System</h2>
+
+    <form method="post" action="/ask">
+        <div class="query-row">
+            <textarea id="queryInput" name="query" rows="4" cols="60"
+                placeholder="Enter farmer query or use the microphone..."></textarea>
+
+            <!-- Voice input controls -->
+            <div class="voice-controls">
+                <button type="button" id="micButton" aria-label="Record microphone"
+                    title="Click to start/stop recording">
+                    🎙
+                </button>
+
+                <div class="voice-meta">
+                    <div id="recordStatus" style="font-weight: bold;"></div>
+                    <div id="languageInfo" style="font-style: italic; color: #333;"></div>
+                </div>
+            </div>
+        </div>
+
+        <br><br>
+        <button type="submit">Get Advice</button>
+    </form>
+
+    {% if response %}
+        <hr>
+        <p><b>Translated:</b> {{ translated }}</p>
+        <p><b>Canonical Question:</b> {{ canonical }}</p>
+        <p><b>Advice:</b> {{ response.answer }}</p>
+        <p><b>Confidence:</b> {{ response.confidence }}</p>
+    {% endif %}
+
+    <style>
+        .query-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+        }
+
+        #queryInput {
+            flex: 1;
+            min-width: 280px;
+        }
+
+        .voice-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #micButton {
+            border: none;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            cursor: pointer;
+            background-color: #e0e0e0;
+            color: #000;
+            font-size: 22px;
+            padding: 0;
+        }
+
+        #micButton:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        /* Mic button recording state */
+        .recording {
+            background-color: #ff4d4f !important;
+            color: #fff !important;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(255, 77, 79, 0.7);
+            }
+            70% {
+                transform: scale(1.08);
+                box-shadow: 0 0 0 10px rgba(255, 77, 79, 0);
+            }
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(255, 77, 79, 0);
+            }
+        }
+    </style>
+
+    <script>
+        (function () {
+            const micButton = document.getElementById('micButton');
+            const statusSpan = document.getElementById('recordStatus');
+            const languageInfoSpan = document.getElementById('languageInfo');
+            const queryInput = document.getElementById('queryInput');
+
+            if (!micButton || !statusSpan || !queryInput) {
+                return;
+            }
+
+            let mediaRecorder = null;
+            let audioChunks = [];
+            let isRecording = false;
+            let isTranscribing = false;
+
+            function setStatus(message) {
+                statusSpan.textContent = message || '';
+            }
+
+            function setLanguageInfo(name, confidence) {
+                if (!name) {
+                    languageInfoSpan.textContent = '';
+                    return;
+                }
+                // Showing only language name (confidence is optional for UI).
+                languageInfoSpan.textContent = `Detected language: ${name}`;
+            }
+
+            function interleaveChannels(channelData) {
+                const numberOfChannels = channelData.length;
+                const length = channelData[0].length;
+                const result = new Float32Array(length * numberOfChannels);
+                let offset = 0;
+
+                for (let i = 0; i < length; i++) {
+                    for (let channel = 0; channel < numberOfChannels; channel++) {
+                        result[offset++] = channelData[channel][i];
+                    }
+                }
+
+                return result;
+            }
+
+            function audioBufferToWavBlob(audioBuffer) {
+                const numChannels = audioBuffer.numberOfChannels;
+                const sampleRate = audioBuffer.sampleRate;
+                const samples = interleaveChannels(
+                    Array.from({ length: numChannels }, (_, ch) => audioBuffer.getChannelData(ch))
+                );
+
+                // PCM16 encoding
+                const bytesPerSample = 2;
+                const blockAlign = numChannels * bytesPerSample;
+                const buffer = new ArrayBuffer(44 + samples.length * bytesPerSample);
+                const view = new DataView(buffer);
+
+                function writeString(offset, str) {
+                    for (let i = 0; i < str.length; i++) {
+                        view.setUint8(offset + i, str.charCodeAt(i));
+                    }
+                }
+
+                // RIFF header
+                writeString(0, 'RIFF');
+                view.setUint32(4, 36 + samples.length * bytesPerSample, true);
+                writeString(8, 'WAVE');
+
+                // fmt chunk
+                writeString(12, 'fmt ');
+                view.setUint32(16, 16, true); // PCM
+                view.setUint16(20, 1, true); // Audio format: 1=PCM
+                view.setUint16(22, numChannels, true);
+                view.setUint32(24, sampleRate, true);
+                view.setUint32(28, sampleRate * blockAlign, true); // byte rate
+                view.setUint16(32, blockAlign, true);
+                view.setUint16(34, 16, true); // bits per sample
+
+                // data chunk
+                writeString(36, 'data');
+                view.setUint32(40, samples.length * bytesPerSample, true);
+
+                // PCM samples
+                let offset = 44;
+                for (let i = 0; i < samples.length; i++) {
+                    let s = Math.max(-1, Math.min(1, samples[i]));
+                    // Convert float [-1, 1] to PCM16
+                    view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+                    offset += 2;
+                }
+
+                return new Blob([buffer], { type: 'audio/wav' });
+            }
+
+            async function convertBlobToWav(blob) {
+                const arrayBuffer = await blob.arrayBuffer();
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContextClass) {
+                    throw new Error('Web Audio API not supported in this browser.');
+                }
+
+                const audioCtx = new AudioContextClass();
+                try {
+                    const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+                    return audioBufferToWavBlob(audioBuffer);
+                } finally {
+                    // Close to free system resources
+                    try { audioCtx.close(); } catch (_) {}
+                }
+            }
+
+            async function startRecording() {
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    alert('Microphone access is not supported in this browser.');
+                    return;
+                }
+
+                try {
+                    if (isTranscribing) return;
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    audioChunks = [];
+                    const preferredTypes = [
+                        'audio/webm;codecs=opus',
+                        'audio/webm',
+                        'audio/ogg;codecs=opus'
+                    ];
+                    const mimeType = preferredTypes.find(t => MediaRecorder.isTypeSupported(t));
+                    mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+
+                    mediaRecorder.ondataavailable = (event) => {
+                        if (event.data && event.data.size > 0) {
+                            audioChunks.push(event.data);
+                        }
+                    };
+
+                    mediaRecorder.onstop = async () => {
+                        try {
+                            const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+                            const wavBlob = await convertBlobToWav(blob);
+                            await sendToServer(wavBlob);
+                        } catch (err) {
+                            console.error('Error converting/sending audio:', err);
+                            setStatus('Error during transcription');
+                            alert('Error during transcription: ' + (err.message || err));
+                        } finally {
+                            // Ensure microphone is released
+                            stream.getTracks().forEach(track => track.stop());
+                            isTranscribing = false;
+                            micButton.disabled = false;
+                        }
+                    };
+
+                    mediaRecorder.start();
+                    isRecording = true;
+                    isTranscribing = false;
+                    micButton.classList.add('recording');
+                    setStatus('Recording...');
+                } catch (err) {
+                    console.error('Error accessing microphone:', err);
+                    alert('Could not access microphone: ' + err.message);
+                    setStatus('');
+                    isRecording = false;
+                }
+            }
+
+            function stopRecording() {
+                if (mediaRecorder && isRecording) {
+                    isRecording = false;
+                    isTranscribing = true;
+                    micButton.disabled = true;
+                    setStatus('Transcribing...');
+                    micButton.classList.remove('recording');
+                    mediaRecorder.stop();
+                }
+            }
+
+            async function sendToServer(wavBlob) {
+                try {
+                    setLanguageInfo('', null);
+
+                    const formData = new FormData();
+                    formData.append('audio', wavBlob, 'recording.wav');
+
+                    const response = await fetch('/transcribe', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const data = await response.json();
+
+                    if (!response.ok || data.success === false) {
+                        const errMsg = data.error || 'Transcription failed.';
+                        console.error('Transcription error:', errMsg);
+                        setStatus('Error during transcription');
+                        alert(errMsg);
+                        return;
+                    }
+
+                    setStatus('Done!');
+
+                    if (data.language_name) {
+                        const confidence = typeof data.confidence === 'number'
+                            ? data.confidence
+                            : parseFloat(data.confidence) || 0;
+                        setLanguageInfo(data.language_name, confidence);
+                    }
+
+                    if (data.transcribed_text) {
+                        if (queryInput.value && !queryInput.value.endsWith(' ')) {
+                            queryInput.value += ' ';
+                        }
+                        queryInput.value += data.transcribed_text;
+                    }
+                } catch (err) {
+                    console.error('Error sending audio to /transcribe:', err);
+                    alert('Error during transcription: ' + err.message);
+                    setStatus('Error during transcription');
+                }
+            }
+
+            micButton.addEventListener('click', () => {
+                if (!isRecording) {
+                    startRecording();
+                } else {
+                    stopRecording();
+                }
+            });
+        })();
+    </script>
+</body>
+</html>
