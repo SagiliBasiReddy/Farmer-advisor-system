@@ -569,5 +569,7 @@ def ask():
 
 
 if __name__ == "__main__":
-    print("[SERVER] Running at http://127.0.0.1:5000")
-    app.run(debug=True)
+    port = int(os.getenv("PORT", 5000))
+    debug_mode = os.getenv("FLASK_ENV", "production") == "development"
+    print(f"[SERVER] Running at http://127.0.0.1:{port}")
+    app.run(host="0.0.0.0", port=port, debug=debug_mode)
