@@ -8,19 +8,62 @@ from flask_cors import CORS
 from dotenv import load_dotenv
 from pydub import AudioSegment
 import io
+import gc
 
 # Load environment variables
 load_dotenv()
 
-from translator_fixed import translate
-from soltrans import generate_farmer_response
-from retriever import retrieve
-from crop_preference import prefer_crop_specific
-from llm_validator import validate_answers, generate_fallback_answer
-from canonicalizer import canonicalize
+# Lazy imports to reduce startup time
+translator_fixed = None
+soltrans = None
+retriever_module = None
+crop_preference_module = None
+llm_validator_module = None
+canonicalizer_module = None
+
+def lazy_import_translator():
+    global translator_fixed
+    if translator_fixed is None:
+        from translator_fixed import translate
+        translator_fixed = translate
+    return translator_fixed
+
+def lazy_import_soltrans():
+    global soltrans
+    if soltrans is None:
+        from soltrans import generate_farmer_response
+        soltrans = generate_farmer_response
+    return soltrans
+
+def lazy_import_retriever():
+    global retriever_module
+    if retriever_module is None:
+        from retriever import retrieve
+        retriever_module = retrieve
+    return retriever_module
+
+def lazy_import_crop_preference():
+    global crop_preference_module
+    if crop_preference_module is None:
+        from crop_preference import prefer_crop_specific
+        crop_preference_module = prefer_crop_specific
+    return crop_preference_module
+
+def lazy_import_llm_validator():
+    global llm_validator_module
+    if llm_validator_module is None:
+        from llm_validator import validate_answers, generate_fallback_answer
+        llm_validator_module = (validate_answers, generate_fallback_answer)
+    return llm_validator_module
+
+def lazy_import_canonicalizer():
+    global canonicalizer_module
+    if canonicalizer_module is None:
+        from canonicalizer import canonicalize
+        canonicalizer_module = canonicalize
+    return canonicalizer_module
 
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
-
 
 app = Flask(__name__, static_folder='agri-advisor/dist', static_url_path='')
 CORS(app, origins="*")
@@ -289,28 +332,48 @@ def transcribe_audio():
                 print("[TRANSCRIBE] Warning: temp file could not be deleted")
 
 
+@app.route("/health", methods=["GET"])
+def health_check():
+    """Health check endpoint for deployment monitoring."""
+    return jsonify({
+        "status": "ok",
+        "message": "Agro Advisor backend is running",
+        "timestamp": os.getenv("TIMESTAMP", "N/A")
+    }), 200
+
+
 @app.route("/ask", methods=["POST"])
 def ask():
-    user_input = (
-        request.json.get("query", "")
-        if request.is_json
-        else request.form.get("query", "")
-    )
-    
-    # Get optional language info from frontend (from transcription)
-    frontend_language = (
-        request.json.get("language", "")
-        if request.is_json
-        else request.form.get("language", "")
-    )
+    try:
+        user_input = (
+            request.json.get("query", "")
+            if request.is_json
+            else request.form.get("query", "")
+        )
+        
+        # Get optional language info from frontend (from transcription)
+        frontend_language = (
+            request.json.get("language", "")
+            if request.is_json
+            else request.form.get("language", "")
+        )
 
-    print("[USER]", user_input)
-    if frontend_language:
-        print(f"[LANGUAGE] User specified: {frontend_language}")
+        print("[USER]", user_input)
+        if frontend_language:
+            print(f"[LANGUAGE] User specified: {frontend_language}")
 
-    # 1. Translate to English using translator_fixed
-    translated = translate(user_input)
-    print("[ENGLISH TRANSLATION]", translated)
+        # Lazy load translator on first use
+        translate = lazy_import_translator()
+        canonicalize = lazy_import_canonicalizer()
+        retrieve = lazy_import_retriever()
+        prefer_crop_specific = lazy_import_crop_preference()
+        generate_fallback_answer = lazy_import_llm_validator()[1]
+        validate_answers = lazy_import_llm_validator()[0]
+        generate_farmer_response = lazy_import_soltrans()
+        
+        # 1. Translate to English using translator_fixed
+        translated = translate(user_input)
+        print("[ENGLISH TRANSLATION]", translated)
     
     # 2. Detect crop using simple keyword matching
     crop = None
@@ -566,10 +629,26 @@ def ask():
         canonical=canonical_q,
         response=response
     )
+    
+    except Exception as e:
+        print(f"[ERROR] /ask endpoint failed: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            "success": False,
+            "error": f"Processing failed: {str(e)}",
+            "status": "error"
+        }), 500
 
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 5000))
     debug_mode = os.getenv("FLASK_ENV", "production") == "development"
-    print(f"[SERVER] Running at http://127.0.0.1:{port}")
-    app.run(host="0.0.0.0", port=port, debug=debug_mode)
+    print(f"[SERVER] Starting Agro Advisor backend on port {port}")
+    print(f"[SERVER] Debug mode: {debug_mode}")
+    print(f"[SERVER] Visit http://0.0.0.0:{port}/health for health check")
+    
+    # Force garbage collection on startup
+    gc.collect()
+    
+    app.run(host="0.0.0.0", port=port, debug=debug_mode, threaded=True)

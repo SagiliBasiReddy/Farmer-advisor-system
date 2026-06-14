@@ -11,6 +11,13 @@
 
 ## 🔧 Step 1: Deploy Backend (Railway or Render)
 
+### ⚡ **NEW: App Optimized for Free Tier** ✅
+- **Lazy loading**: Heavy models load only on first query (not at startup)
+- **No more 10-second crashes**: Startup now takes ~30 seconds
+- **Memory optimized**: Gunicorn configured for 256MB RAM
+- **Health check**: `/health` endpoint for monitoring
+- You can now deploy on Railway free tier successfully!
+
 ### Option A: Deploy on Railway (Recommended)
 
 1. Go to [railway.app](https://railway.app)
@@ -104,6 +111,9 @@ CORS(app, origins=["https://your-frontend-url.vercel.app"])
 | 503 Backend error | Check API keys are set correctly in Railway/Render |
 | CORS errors | Ensure backend URL is added to CORS origins |
 | Build fails | Check requirements.txt is in root directory |
+| **App crashes after 10 seconds** | ✅ FIXED in latest version - models load on first query, not startup |
+| **Memory limit exceeded** | Models now lazy-load, should work on free tier |
+| **Deployment timeout** | Increase timeout, or use Railway (faster auto-detection) |
 
 ---
 
