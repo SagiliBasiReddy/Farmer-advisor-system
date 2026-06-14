@@ -1,4 +1,4 @@
-# SRM Agro Advisor
+# Agro Advisor
 
 An AI-powered agricultural advisory system providing intelligent farming guidance in multiple Indian languages. Built with Python Flask backend and React TypeScript frontend for farmers across India.
 
@@ -102,7 +102,7 @@ Visit `http://localhost:8080` in your browser
 ├── agri-advisor/                          # React Frontend
 │   ├── src/
 │   │   ├── components/                    # React components
-│   │   │   ├── Header.tsx                 # SRM Agro Advisor branding
+│   │   │   ├── Header.tsx                 # Agro Advisor branding
 │   │   │   ├── QueryInput.tsx             # Multilingual voice/text input
 │   │   │   ├── ResultsCard.tsx            # Results display
 │   │   │   └── ...

@@ -17,7 +17,7 @@ const Header = () => {
             </div>
             <div>
               <h1 className="text-4xl sm:text-5xl md:text-6xl font-black bg-gradient-to-r from-emerald-200 via-green-200 to-teal-200 bg-clip-text text-transparent drop-shadow-lg">
-                SRM Agro Advisor
+                Agro Advisor
               </h1>
               <p className="text-sm sm:text-base text-emerald-300 font-bold ml-1 flex items-center gap-2">
                 <Sparkles className="w-4 h-4" />
